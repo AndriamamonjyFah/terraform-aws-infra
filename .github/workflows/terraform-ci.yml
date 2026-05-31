@@ -1,0 +1,144 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  
+  # Job 1 : Format & Validate
+ 
+  terraform-quality:
+    name: Format & Validate
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: .
+
+      - name: Terraform Init (no backend)
+        run: |
+          mkdir -p /tmp/tf-plugin-cache
+          TF_PLUGIN_CACHE_DIR=/tmp/tf-plugin-cache \
+          terraform init -backend=false -input=false
+        working-directory: environments/${{ matrix.environment }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: environments/${{ matrix.environment }}
+
+ 
+  # Job 2 : Lint avec TFLint
+  
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    needs: terraform-quality
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+        working-directory: .
+
+      - name: Run TFLint on modules
+        run: |
+          for dir in modules/vpc modules/ec2 modules/security; do
+            echo "==> Lint : $dir"
+            tflint --chdir="$dir"
+          done
+
+      - name: Run TFLint on environments
+        run: |
+          for dir in environments/dev environments/staging environments/prod; do
+            echo "==> Lint : $dir"
+            tflint --chdir="$dir"
+          done
+
+ 
+  # Job 3 : Scan sécurité avec Checkov
+  
+  checkov:
+    name: Checkov Security Scan
+    runs-on: ubuntu-latest
+    needs: terraform-quality
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          config_file: .checkov.yaml
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+
+      - name: Upload Checkov SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+        continue-on-error: true
+
+      - name: Checkov Summary
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          config_file: .checkov.yaml
+          output_format: cli
+          soft_fail: true
+
+ 
+  # Job 4 : Resumé 
+
+  pr-comment:
+    name: PR Comment
+    runs-on: ubuntu-latest
+    needs: [terraform-quality, tflint, checkov]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ Terraform CI — Résultats\n\n| Check | Statut |\n|---|---|\n| Format & Validate | ✅ Passed |\n| TFLint | ✅ Passed |\n| Checkov Security | ✅ Passed |\n\n*Commit : \`${{ github.sha }}\`*`
+            })

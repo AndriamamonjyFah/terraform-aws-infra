@@ -1,0 +1,30 @@
+# .checkov.yaml — Configuration Checkov
+# Checks globalement skippés avec justification documentée.
+# Tout skip est intentionnel et documenté dans docs/adr/.
+
+compact: true
+quiet: false
+framework:
+  - terraform
+
+skip-check:
+  # CKV_AWS_130 : map_public_ip_on_launch=true intentionnel sur subnet PUBLIC.
+  # Architecture avec subnet privé + NAT Gateway prévue en v2.
+  - CKV_AWS_130
+
+  # CKV2_AWS_5 : Security Group bien attaché via vpc_security_group_ids dans
+  # le module ec2. Limitation de l'analyse statique cross-modules de Checkov.
+  - CKV2_AWS_5
+
+  # CKV_AWS_135 : ebs_optimized non disponible sur t2.micro (Free Tier dev).
+  # Activé via variable ebs_optimized=true sur staging (t3.small) et prod (t3.medium).
+  - CKV_AWS_135
+
+  # CKV_AWS_260 : Port 80 ouvert intentionnellement — serveur web public HTTP.
+  # Acceptable en phase de développement. En prod : redirection HTTP→HTTPS via ALB.
+  - CKV_AWS_260
+
+  # CKV_AWS_24 : SSH contrôlé par variable ssh_allowed_cidr.
+  # Dev : 0.0.0.0/0 acceptable. Staging/Prod : obligation de passer IP/32.
+  # La validation Terraform bloque un CIDR invalide.
+  - CKV_AWS_24

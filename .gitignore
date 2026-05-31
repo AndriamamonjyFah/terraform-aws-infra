@@ -1,0 +1,49 @@
+#  Terraform 
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+crash.log
+crash.*.log
+.terraform.lock.hcl
+**/tfplan
+
+#  Variables sensibles 
+terraform.tfvars
+*.auto.tfvars
+# Note : terraform.tfvars.example est commité volontairement
+
+# Clés SSH et credentials AWS 
+*.pem
+*.key
+*.p12
+.aws/
+*_rsa
+*_ed25519
+!*.pub
+
+#  Secrets & détection 
+.secrets.baseline
+
+#  OS 
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+#  Éditeurs 
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+#  Python (checkov, pre-commit) 
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+#  Logs 
+*.log

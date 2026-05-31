@@ -1,0 +1,23 @@
+# terraform.tfvars.example — STAGING
+# Copier ce fichier en terraform.tfvars et adapter les valeurs.
+
+project_name        = "my-infra"
+aws_region          = "eu-west-3"
+owner               = "team-infra"
+github_username     = "your-username"
+
+# Réseau — CIDR différent de dev pour éviter les conflits VPC peering
+vpc_cidr            = "10.1.0.0/16"
+subnet_public_cidr  = "10.1.1.0/24"
+
+# EC2 — instance légèrement plus puissante qu'en dev
+instance_type       = "t3.small"
+root_volume_size    = 30
+cpu_alarm_threshold = 75
+
+# Sécurité — restreindre le SSH à ton IP : curl ifconfig.me
+ssh_allowed_cidr    = "0.0.0.0/0"
+ssh_public_key_path = "~/.ssh/terraform_vm_key.pub"
+
+# EBS optimized — disponible sur t3.small
+ebs_optimized       = true

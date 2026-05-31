@@ -1,0 +1,18 @@
+
+project_name        = "my-infra"
+aws_region          = "eu-west-3"
+owner               = "team-infra"
+github_username     = "your-username"
+
+# Réseau
+vpc_cidr            = "10.0.0.0/16"
+subnet_public_cidr  = "10.0.1.0/24"
+
+# EC2
+instance_type       = "t2.micro"
+root_volume_size    = 20
+cpu_alarm_threshold = 80
+
+# Sécurité — SSH ouvert en dev, restreindre en prod
+ssh_allowed_cidr    = "0.0.0.0/0"
+ssh_public_key_path = "~/.ssh/terraform_vm_key.pub"
