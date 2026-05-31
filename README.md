@@ -192,7 +192,6 @@ make clean             # Nettoyer les fichiers temporaires
 ## Documentation
 
 - [`docs/architecture.md`](docs/architecture.md) — Diagramme et flux
-- [`docs/cost-estimation.md`](docs/cost-estimation.md) — Coûts AWS estimés
 - [`docs/adr/`](docs/adr/) — Décisions d'architecture (ADR)
 - Chaque module a son propre `README.md` avec inputs/outputs
 
